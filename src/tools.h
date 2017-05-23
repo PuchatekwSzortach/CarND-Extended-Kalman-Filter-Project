@@ -29,6 +29,13 @@ public:
   */
   MatrixXd CalculateJacobian(const VectorXd& x_state);
 
+  /**
+   * Given an angle in radians, return that angle normalized to <-PI/2, PI/2> range
+   * @param angle
+   * @return
+   */
+  float get_normalized_angle(float angle) ;
+
 };
 
 #endif /* TOOLS_H_ */

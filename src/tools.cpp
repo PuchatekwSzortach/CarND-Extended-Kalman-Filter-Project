@@ -1,6 +1,8 @@
 #include <iostream>
 #include "tools.h"
 
+#include <math.h>
+
 using Eigen::VectorXd;
 using Eigen::MatrixXd;
 using std::vector;
@@ -33,4 +35,22 @@ MatrixXd Tools::CalculateJacobian(const VectorXd& x_state) {
   TODO:
     * Calculate a Jacobian here.
   */
+}
+
+float Tools::get_normalized_angle(float angle)
+{
+  // If angle is below PI, bump it up
+  while(angle < -M_PI)
+  {
+    angle += 2 * M_PI ;
+  }
+
+  // If angl is above PI, decrease it
+  while(angle > M_PI)
+  {
+    angle -= 2 * M_PI ;
+  }
+
+  return angle ;
+
 }

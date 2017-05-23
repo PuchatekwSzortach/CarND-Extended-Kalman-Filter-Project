@@ -78,13 +78,16 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     }
     else if(measurement_pack.sensor_type_ == MeasurementPackage::RADAR)
     {
+
       //      /**
       //      Convert radar from polar to cartesian coordinates and initialize state.
       //      */
+      float r = measurement_pack.raw_measurements_[0] ;
+      float theta = tools.get_normalized_angle(measurement_pack.raw_measurements_[1]) ;
 
-      std::cout << "We got ourselves a RADAR reading" << std::endl;
-      std::cout << "Not handling that yet" << std::endl ;
-      return ;
+      px = r * std::cos(theta) ;
+      py = r * std::sin(theta) ;
+
     }
 
     this->previous_timestamp_ = measurement_pack.timestamp_ ;
@@ -123,12 +126,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
      * Update the process noise covariance matrix.
      * Use noise_ax = 9 and noise_ay = 9 for your Q matrix.
    */
-
-  // For now we explicitly ignore RADAR measurements
-  if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR)
-  {
-    return ;
-  }
 
   float time_delta = float((measurement_pack.timestamp_ - previous_timestamp_) / 1000000.0) ;
 
@@ -175,11 +172,13 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
   } else {
 
+    // Don't use laser for a moment
+    int i = 0 ;
     // Laser updates
-    this->ekf_.H_ = this->H_laser_ ;
-    this->ekf_.R_ = this->R_laser_ ;
-
-    this->ekf_.Update(measurement_pack.raw_measurements_) ;
+//    this->ekf_.H_ = this->H_laser_ ;
+//    this->ekf_.R_ = this->R_laser_ ;
+//
+//    this->ekf_.Update(measurement_pack.raw_measurements_) ;
 
   }
 
