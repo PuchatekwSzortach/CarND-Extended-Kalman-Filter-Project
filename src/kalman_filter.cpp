@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "kalman_filter.h"
+#include "tools.h"
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -49,4 +50,18 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   TODO:
     * update the state by using Extended Kalman Filter equations
   */
+  VectorXd z_prediction = H_ * x_ ;
+  VectorXd y = z - z_prediction ;
+
+  y << y[0], Tools().get_normalized_angle(y[1]), y[2] ;
+
+  MatrixXd S = H_ * P_ * H_.transpose() + R_ ;
+  MatrixXd K = P_ * H_.transpose() * S.inverse() ;
+
+  std::cout << "y is\n" << y << "\nS is \n" << S << "\nK is \n" << K << std::endl ;
+
+  x_ = x_ + (K * y) ;
+
+  MatrixXd I = MatrixXd::Identity(4, 4) ;
+  this->P_ = (I - K * H_) * P_ ;
 }

@@ -52,6 +52,19 @@ FusionEKF::~FusionEKF() {}
 
 void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
+
+  if(measurement_pack.sensor_type_ == MeasurementPackage::LASER)
+  {
+    std::cout << "Laser handling disabled" << std::endl ;
+    return ;
+
+  }
+  else {
+
+    std::cout << "Handling RADAR" << std::endl ;
+
+  }
+
   /*****************************************************************************
    *  Initialization
    ****************************************************************************/
@@ -78,15 +91,18 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     }
     else if(measurement_pack.sensor_type_ == MeasurementPackage::RADAR)
     {
-
       //      /**
       //      Convert radar from polar to cartesian coordinates and initialize state.
       //      */
       float r = measurement_pack.raw_measurements_[0] ;
       float theta = tools.get_normalized_angle(measurement_pack.raw_measurements_[1]) ;
+//      float r_dot = measurement_pack.raw_measurements_[2] ;
 
       px = r * std::cos(theta) ;
       py = r * std::sin(theta) ;
+
+//      vx = r_dot * std::cos(theta) ;
+//      vy = r_dot * std::sin(theta) ;
 
     }
 
@@ -106,7 +122,9 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
     // These matrices change at each time step, so for now their initial values don't matter.
     // We just need to initialize them to something so that Kalman Filter object grabs memory for them
-    MatrixXd F(4,4), H(4,4), R(2,2), Q(4,4) ;
+
+//    MatrixXd F(4,4), H(4,4), R(2,2), Q(4,4) ;
+    MatrixXd F(4,4), H(3,4), R(3,3), Q(4,4) ;
 
     this->ekf_.Init(initial_measurement, P, F, H, R, Q);
 
@@ -132,8 +150,9 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   // Update timestamp
   this->previous_timestamp_ = measurement_pack.timestamp_ ;
 
-  // Update state transision matrix F
-  this->ekf_.F_ << 1, 0, time_delta, 0,
+  // Update state transition matrix F
+  this->ekf_.F_ <<
+        1, 0, time_delta, 0,
         0, 1, 0, time_delta,
         0, 0, 1, 0,
         0, 0, 0, 1 ;
@@ -167,8 +186,10 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
 
     // Radar updates
-    std::cout << "RADAR measurement" << std::endl ;
-    std::cout << "Not handling it yet" << std::endl ;
+    this->ekf_.H_ = tools.CalculateJacobian(this->ekf_.x_) ;
+    this->ekf_.R_ = this->R_radar_ ;
+
+    this->ekf_.UpdateEKF(measurement_pack.raw_measurements_) ;
 
   } else {
 
