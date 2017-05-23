@@ -62,8 +62,9 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
     double px = 0 ;
     double py = 0 ;
-    double vx = 0 ;
-    double vy = 0 ;
+    // dummy velocity
+    double vx = 0.1 ;
+    double vy = 0.5 ;
 
     if(measurement_pack.sensor_type_ == MeasurementPackage::LASER)
     {
@@ -91,6 +92,16 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     initial_measurement << px, py, vx, vy ;
     ekf_.x_ = initial_measurement ;
 
+    MatrixXd P(4, 4);
+    P << 1000, 0, 0, 0,
+          0, 1000, 0, 0,
+          0, 0, 1000, 0,
+          0, 0, 0, 1000 ;
+
+    MatrixXd F(4,4), H(4,4), Q(4,4) ;
+
+    this->ekf_.Init(initial_measurement, P, F, H, this->R_laser_, Q);
+
     // done initializing, no need to predict or update
     is_initialized_ = true;
     return;
@@ -108,16 +119,21 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
      * Use noise_ax = 9 and noise_ay = 9 for your Q matrix.
    */
 
+  std::cout << "Time delta here" << std::endl ;
   double time_delta = (measurement_pack.timestamp_ - previous_timestamp_) / 1000000.0 ;
 
-  MatrixXd F(4,4) ;
-  F << 1, 0, time_delta, 0,
+  std::cout << "Printing out very initial F matrix" << std::endl;
+  std::cout << this->ekf_.F_ << std::endl ;
+  this->ekf_.F_ << 1, 0, time_delta, 0,
         0, 1, 0, time_delta,
         0, 0, 1, 0,
         0, 0, 0, 1 ;
 
+
+  std::cout << "Updated F matrix" << std::endl ;
+
   std::cout << "F is" << std::endl ;
-  std::cout << F << std::endl ;
+  std::cout << this->ekf_.F_ << std::endl ;
 
 
   ekf_.Predict();
