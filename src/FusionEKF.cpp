@@ -98,6 +98,8 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
           0, 0, 1000, 0,
           0, 0, 0, 1000 ;
 
+    // These matrices change at each time step, so for now their initial values don't matter.
+    // We just need to initialize them to something so that Kalman Filter object grabs memory for them
     MatrixXd F(4,4), H(4,4), Q(4,4) ;
 
     this->ekf_.Init(initial_measurement, P, F, H, this->R_laser_, Q);
@@ -119,22 +121,35 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
      * Use noise_ax = 9 and noise_ay = 9 for your Q matrix.
    */
 
-  std::cout << "Time delta here" << std::endl ;
+  // For now we explicitly ignore RADAR measurements
+  if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR)
+  {
+    return ;
+  }
+
   double time_delta = (measurement_pack.timestamp_ - previous_timestamp_) / 1000000.0 ;
 
-  std::cout << "Printing out very initial F matrix" << std::endl;
   std::cout << this->ekf_.F_ << std::endl ;
   this->ekf_.F_ << 1, 0, time_delta, 0,
         0, 1, 0, time_delta,
         0, 0, 1, 0,
         0, 0, 0, 1 ;
 
-
-  std::cout << "Updated F matrix" << std::endl ;
-
-  std::cout << "F is" << std::endl ;
   std::cout << this->ekf_.F_ << std::endl ;
 
+  double half_squared_time_delta = time_delta * time_delta / 2.0 ;
+
+  MatrixXd G(4,2) ;
+  G << half_squared_time_delta, 0,
+      0, half_squared_time_delta,
+      time_delta, 0,
+      0, time_delta ;
+
+  MatrixXd Qv(2,2) ;
+  Qv << 9, 0,
+        0, 9 ;
+
+  this->ekf_.Q_ = G * Qv * G.transpose() ;
 
   ekf_.Predict();
 
