@@ -67,34 +67,32 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
     if(measurement_pack.sensor_type_ == MeasurementPackage::LASER)
     {
+      //      /**
+      //      Initialize state.
+      //      */
       px = measurement_pack.raw_measurements_[0] ;
       py = measurement_pack.raw_measurements_[1] ;
     }
-
-    if(measurement_pack.sensor_type_ == MeasurementPackage::RADAR)
+    else if(measurement_pack.sensor_type_ == MeasurementPackage::RADAR)
     {
+      //      /**
+      //      Convert radar from polar to cartesian coordinates and initialize state.
+      //      */
+
       std::cout << "We got ourselves a RADAR reading" << std::endl;
       std::cout << "Not handling that yet" << std::endl ;
     }
 
+    this->previous_timestamp_ = measurement_pack.timestamp_ ;
+
     // first measurement
     cout << "EKF: " << endl;
-    ekf_.x_ = VectorXd(4);
-    ekf_.x_ << px, py, vx, vy ;
-//
-//    if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
-//      /**
-//      Convert radar from polar to cartesian coordinates and initialize state.
-//      */
-//    }
-//    else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
-//      /**
-//      Initialize state.
-//      */
-//    }
-//
-//    // done initializing, no need to predict or update
-//    is_initialized_ = true;
+    VectorXd initial_measurement(4);
+    initial_measurement << px, py, vx, vy ;
+    ekf_.x_ = initial_measurement ;
+
+    // done initializing, no need to predict or update
+    is_initialized_ = true;
     return;
   }
 
@@ -110,6 +108,18 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
      * Use noise_ax = 9 and noise_ay = 9 for your Q matrix.
    */
 
+  double time_delta = (measurement_pack.timestamp_ - previous_timestamp_) / 1000000.0 ;
+
+  MatrixXd F(4,4) ;
+  F << 1, 0, time_delta, 0,
+        0, 1, 0, time_delta,
+        0, 0, 1, 0,
+        0, 0, 0, 1 ;
+
+  std::cout << "F is" << std::endl ;
+  std::cout << F << std::endl ;
+
+
   ekf_.Predict();
 
   /*****************************************************************************
@@ -124,11 +134,17 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
     // Radar updates
+    std::cout << "RADAR measurement" << std::endl ;
+    std::cout << "Not handling it yet" << std::endl ;
   } else {
     // Laser updates
+    std::cout << "LIDAR measurement" << std::endl ;
   }
 
   // print the output
   cout << "x_ = " << ekf_.x_ << endl;
   cout << "P_ = " << ekf_.P_ << endl;
+
+  // Update timestamp
+  this->previous_timestamp_ = measurement_pack.timestamp_ ;
 }
