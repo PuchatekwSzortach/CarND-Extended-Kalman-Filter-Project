@@ -13,8 +13,8 @@ Tools::~Tools() {}
 
 VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
                               const vector<VectorXd> &ground_truth) {
-  VectorXd errors(4) ;
-  errors << 0, 0, 0, 0 ;
+  VectorXd squared_errors_sum(4) ;
+  squared_errors_sum << 0, 0, 0, 0 ;
 
   // Sum square sums of errors between ground truth and observations so far
   for(int i = 0 ; i < estimations.size() ; ++i)
@@ -23,11 +23,11 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
     VectorXd difference = (estimations[i] - ground_truth[i]) ;
     VectorXd squared_difference = difference.array() * difference.array() ;
 
-    errors += squared_difference ;
+    squared_errors_sum += squared_difference ;
   }
 
   // Now divide by number of samples and take sqrt for a complete RMSE
-  return (errors / estimations.size()).array().sqrt() ;
+  return (squared_errors_sum / estimations.size()).array().sqrt() ;
 }
 
 MatrixXd Tools::CalculateJacobian(const VectorXd& x_state) {
@@ -74,7 +74,7 @@ float Tools::get_normalized_angle(float angle)
     angle += 2 * M_PI ;
   }
 
-  // If angl is above PI, decrease it
+  // If angle is above PI, decrease it
   while(angle > M_PI)
   {
     angle -= 2 * M_PI ;

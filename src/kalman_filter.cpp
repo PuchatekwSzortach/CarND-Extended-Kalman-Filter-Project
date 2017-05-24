@@ -50,15 +50,23 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   TODO:
     * update the state by using Extended Kalman Filter equations
   */
-  VectorXd z_prediction = H_ * x_ ;
-  VectorXd y = z - z_prediction ;
 
+  float px = this->x_[0] ;
+  float py = this->x_[1] ;
+  float vx = this->x_[2] ;
+  float vy = this->x_[3] ;
+
+  float squared_radial_distance = std::sqrt((px*px) + (py*py)) ;
+
+  VectorXd radial_coordinates_prediction(3);
+  radial_coordinates_prediction << squared_radial_distance, std::atan2(py, px),
+    ((px*vx) + (py*vy)) / squared_radial_distance ;
+
+  VectorXd y = z - radial_coordinates_prediction ;
   y << y[0], Tools().get_normalized_angle(y[1]), y[2] ;
 
   MatrixXd S = H_ * P_ * H_.transpose() + R_ ;
   MatrixXd K = P_ * H_.transpose() * S.inverse() ;
-
-  std::cout << "y is\n" << y << "\nS is \n" << S << "\nK is \n" << K << std::endl ;
 
   x_ = x_ + (K * y) ;
 

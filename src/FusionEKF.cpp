@@ -52,19 +52,6 @@ FusionEKF::~FusionEKF() {}
 
 void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
-
-  if(measurement_pack.sensor_type_ == MeasurementPackage::LASER)
-  {
-    std::cout << "Laser handling disabled" << std::endl ;
-    return ;
-
-  }
-  else {
-
-    std::cout << "Handling RADAR" << std::endl ;
-
-  }
-
   /*****************************************************************************
    *  Initialization
    ****************************************************************************/
@@ -96,13 +83,13 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       //      */
       float r = measurement_pack.raw_measurements_[0] ;
       float theta = tools.get_normalized_angle(measurement_pack.raw_measurements_[1]) ;
-//      float r_dot = measurement_pack.raw_measurements_[2] ;
+      float r_dot = measurement_pack.raw_measurements_[2] ;
 
       px = r * std::cos(theta) ;
       py = r * std::sin(theta) ;
 
-//      vx = r_dot * std::cos(theta) ;
-//      vy = r_dot * std::sin(theta) ;
+      vx = r_dot * std::cos(theta) ;
+      vy = r_dot * std::sin(theta) ;
 
     }
 
@@ -112,7 +99,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     cout << "EKF: " << endl;
     VectorXd initial_measurement(4);
     initial_measurement << px, py, vx, vy ;
-    ekf_.x_ = initial_measurement ;
 
     MatrixXd P(4, 4);
     P << 1, 0, 0, 0,
@@ -121,9 +107,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
           0, 0, 0, 1000 ;
 
     // These matrices change at each time step, so for now their initial values don't matter.
-    // We just need to initialize them to something so that Kalman Filter object grabs memory for them
-
-//    MatrixXd F(4,4), H(4,4), R(2,2), Q(4,4) ;
+    // We just need to initialize them to something so that Kalman Filter object allocates memory for them
     MatrixXd F(4,4), H(3,4), R(3,3), Q(4,4) ;
 
     this->ekf_.Init(initial_measurement, P, F, H, R, Q);
@@ -171,7 +155,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
   this->ekf_.Q_ = G * Qv * G.transpose() ;
 
-  ekf_.Predict();
+  this->ekf_.Predict();
 
   /*****************************************************************************
    *  Update
@@ -193,13 +177,11 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
   } else {
 
-    // Don't use laser for a moment
-    int i = 0 ;
     // Laser updates
-//    this->ekf_.H_ = this->H_laser_ ;
-//    this->ekf_.R_ = this->R_laser_ ;
-//
-//    this->ekf_.Update(measurement_pack.raw_measurements_) ;
+    this->ekf_.H_ = this->H_laser_ ;
+    this->ekf_.R_ = this->R_laser_ ;
+
+    this->ekf_.Update(measurement_pack.raw_measurements_) ;
 
   }
 
